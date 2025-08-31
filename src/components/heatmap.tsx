@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Circle, MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import type { LatLngExpression, PathOptions } from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const LATITUDE_DPR = -6.2085967;
 const LONGITUDE_DPR = 106.8025844;
@@ -19,7 +19,7 @@ export default function Heatmap() {
       center={[LATITUDE_DPR, LONGITUDE_DPR]}
       zoom={14}
       ref={mapRef}
-      style={{ height: "75%", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

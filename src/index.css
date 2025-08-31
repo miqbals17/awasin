@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
-#map {
-  height: 180px;
+@theme {
+  --color-content-primary: #1f1f1f;
+  --color-content-secondary: #717680;
+
+  --color-stroke-primary: #e6e6e8;
+
+  --color-background-secondary: #f5f5f5;
 }
