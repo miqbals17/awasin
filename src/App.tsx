@@ -4,59 +4,64 @@ import { Button } from "./components/ui/button";
 import Heatmap from "./components/heatmap";
 import { RiAlertFill } from "@remixicon/react";
 import { writeActivityData } from "./lib/realtime-db";
+import { reverseGeocoding } from "./lib/utils";
 
 function App() {
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
-  // const [isReporting, setIsReporting] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
-    // if (navigator.geolocation) {
-    //   navigator.geolocation.getCurrentPosition(
-    //     (position) => {
-    //       setUserLocation({
-    //         lat: position.coords.latitude,
-    //         lng: position.coords.longitude,
-    //       });
-    //     },
-    //     (error) => {
-    //       console.log("Location access denied or unavailable: ", error);
-    //     }
-    //   );
-    // }
-    setUserLocation({
-      lat: -6.2297985,
-      lng: 106.7598,
-    });
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log("Location access denied or unavailable: ", error);
+        }
+      );
+    }
   }, []);
 
   const handleReportDemonstration = async () => {
-    // if (!userLocation) {
-    //   alert("Location access is required to report demonstration activity");
-    //   return;
-    // }
-
-    if (userLocation?.lat === undefined || userLocation?.lng === undefined) {
-      alert("Location access is required to report demonstration activity");
+    if (!userLocation) {
+      alert("Akses lokasi dibutuhkan untuk melaporkan aktivitas demonstrasi");
       return;
     }
 
-    // setIsReporting(true);
+    if (userLocation?.lat === undefined || userLocation?.lng === undefined) {
+      alert("Akses lokasi dibutuhkan untuk melaporkan aktivitas demonstrasi");
+      return;
+    }
+
+    setIsReporting(true);
 
     try {
-      await writeActivityData(userLocation?.lat, userLocation?.lng);
+      const data = await reverseGeocoding(userLocation?.lat, userLocation?.lng);
+      const city = data.address.city;
 
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
-      // alert(
-      //   "Thank you for your report. The demonstration activity has been recorded."
-      // );
+      const sanitizedCity = city.replace(/\s+/g, "-").toLowerCase();
+
+      await writeActivityData(
+        sanitizedCity,
+        userLocation?.lat,
+        userLocation?.lng
+      );
+
+      alert(
+        "Terima kasih atas laporan anda. Aktivitas demonstrasi telah ditambahakan."
+      );
     } catch (error) {
       console.log("error:", error);
-      alert("Failed to submit report. Please try again.");
+      alert("Gagal untuk menambahkan laporan. Silakan coba lagi.");
     } finally {
-      // setIsReporting(false);
+      setIsReporting(false);
     }
   };
 
@@ -109,22 +114,16 @@ function App() {
           <Button
             onClick={handleReportDemonstration}
             className="w-full sm:w-auto"
-          >
-            Laporkan Demonstrasi
-          </Button>
-          {/* <Button
-            onClick={handleReportDemonstration}
             disabled={!userLocation || isReporting}
-            className="w-full sm:w-auto"
           >
-            {isReporting ? "Submitting..." : "Laporkan Demonstrasi"}
-          </Button> */}
-          {/* {!userLocation && (
+            {isReporting ? "Reporting..." : "Laporkan Demonstrasi"}
+          </Button>
+          {!userLocation && (
             <p className="text-sm font-normal text-content-secondary">
               Silakan izinkan akses lokasi untuk melaporkan aktivitas
               demonstrasi.
             </p>
-          )} */}
+          )}
         </Card>
       </main>
     </div>
