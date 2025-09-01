@@ -7,6 +7,13 @@ import { writeActivityData } from "./lib/realtime-db";
 import { reverseGeocoding, searchGeocoding } from "./lib/utils";
 import { onValue, ref } from "firebase/database";
 import { db } from "./lib/firebase";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/ui/dialog";
 
 function App() {
   const [userLocation, setUserLocation] = useState<{
@@ -131,7 +138,7 @@ function App() {
             </p>
             <p></p>
           </div>
-          <div className="w-full h-96 rounded-lg overflow-hidden border border-stroke-primary">
+          <div className="w-full z-40 h-96 rounded-lg overflow-hidden border border-stroke-primary">
             <Heatmap activityMap={heatmapData} />
           </div>
         </Card>
@@ -148,24 +155,40 @@ function App() {
               aktivitas demonstrasi di wilayah Anda.
             </p>
           </div>
-          <p className="text-sm font-normal text-content-secondary">
-            Lokasi Anda akan digunakan untuk menempatkan laporan secara akurat
-            di peta. Semua laporan bersifat anonim dan membantu menciptakan
-            komunitas yang lebih aman dan terinformasi.
-          </p>
-          <Button
-            onClick={handleReportDemonstration}
-            className="w-full sm:w-auto"
-            disabled={!userLocation || isReporting}
-          >
-            {isReporting ? "Reporting..." : "Laporkan Demonstrasi"}
-          </Button>
-          {!userLocation && (
-            <p className="text-sm font-normal text-content-secondary">
-              Silakan izinkan akses lokasi untuk melaporkan aktivitas
-              demonstrasi.
-            </p>
-          )}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">Laporkan Demonstrasi</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader className="flex flex-col gap-y-4">
+                <DialogTitle className="flex gap-x-1 items-center">
+                  <RiAlertFill size={20} />
+                  <span>Laporkan Demonstrasi</span>
+                </DialogTitle>
+                <div className="flex flex-col gap-y-2">
+                  <Button
+                    type="button"
+                    onClick={handleReportDemonstration}
+                    className="w-full sm:w-auto"
+                    disabled={!userLocation || isReporting}
+                  >
+                    {isReporting ? "Reporting..." : "Laporkan Demonstrasi"}
+                  </Button>
+                  {!userLocation && (
+                    <p className="text-sm font-normal text-content-secondary">
+                      Silakan izinkan akses lokasi untuk melaporkan aktivitas
+                      demonstrasi.
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs text-content-secondary font-normal">
+                  *) Lokasi Anda akan digunakan untuk menempatkan laporan secara
+                  akurat di peta. Semua laporan bersifat anonim dan membantu
+                  menciptakan komunitas yang lebih aman dan terinformasi.
+                </p>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </Card>
       </main>
     </div>
