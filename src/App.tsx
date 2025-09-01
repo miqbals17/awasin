@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
 import { Card } from "./components/ui/card";
-import { Button } from "./components/ui/button";
 import Heatmap from "./components/heatmap";
 import { RiAlertFill } from "@remixicon/react";
 import { writeActivityData } from "./lib/realtime-db";
 import { reverseGeocoding, searchGeocoding } from "./lib/utils";
 import { onValue, ref } from "firebase/database";
 import { db } from "./lib/firebase";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./components/ui/dialog";
+import AppDialog from "./app-dialog";
+import AppDialogPin from "./app-dialog-pin";
+
+export interface UserLocation {
+  lat: number;
+  lng: number;
+}
+
+export const LATITUDE_DPR = -6.2085967;
+export const LONGITUDE_DPR = 106.8025844;
 
 function App() {
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [pinLocation, setPinLocation] = useState<UserLocation | null>({
+    lat: LATITUDE_DPR,
+    lng: LONGITUDE_DPR,
+  });
   const [isReporting, setIsReporting] = useState(false);
 
   const [heatmapData, setHeatmapData] = useState<
@@ -50,10 +53,6 @@ function App() {
       });
     });
   };
-
-  useEffect(() => {
-    console.log("heatmapData: ", heatmapData);
-  }, [heatmapData]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -114,6 +113,47 @@ function App() {
     }
   };
 
+  const handleReportPinPoint = async () => {
+    if (!pinLocation) {
+      alert("Akses lokasi dibutuhkan untuk melaporkan aktivitas demonstrasi");
+      return;
+    }
+
+    if (pinLocation?.lat === undefined || pinLocation?.lng === undefined) {
+      alert("Akses lokasi dibutuhkan untuk melaporkan aktivitas demonstrasi");
+      return;
+    }
+
+    setIsReporting(true);
+
+    try {
+      const data = await reverseGeocoding(pinLocation?.lat, pinLocation?.lng);
+      console.log("data: ", data);
+
+      if (!data.address.suburb) {
+        throw new Error("Gagal mendapatkan data Kecamatan");
+      }
+
+      const city = data.address.suburb;
+      const sanitizedCity = city.replace(/\s+/g, "-").toLowerCase();
+
+      await writeActivityData(
+        sanitizedCity,
+        pinLocation?.lat,
+        pinLocation?.lng
+      );
+
+      alert(
+        "Terima kasih atas laporan anda. Aktivitas demonstrasi telah ditambahakan."
+      );
+    } catch (error) {
+      console.log("error:", error);
+      alert("Gagal untuk menambahkan laporan. Silakan coba lagi.");
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-stroke-primary bg-background-secondary">
@@ -139,7 +179,11 @@ function App() {
             <p></p>
           </div>
           <div className="w-full z-40 h-96 rounded-lg overflow-hidden border border-stroke-primary">
-            <Heatmap activityMap={heatmapData} />
+            <Heatmap
+              activityMap={heatmapData}
+              pinLocation={pinLocation}
+              setPinLocation={setPinLocation}
+            />
           </div>
         </Card>
         <Card className="bg-background-secondary border-stroke-primary flex flex-col space-y-4">
@@ -155,42 +199,21 @@ function App() {
               aktivitas demonstrasi di wilayah Anda.
             </p>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">Laporkan Demonstrasi</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader className="flex flex-col gap-y-4">
-                <DialogTitle className="flex gap-x-1 items-center">
-                  <RiAlertFill size={20} />
-                  <span>Laporkan Demonstrasi</span>
-                </DialogTitle>
-                <div className="flex flex-col gap-y-2">
-                  <Button
-                    type="button"
-                    onClick={handleReportDemonstration}
-                    className="w-full sm:w-auto"
-                    disabled={!userLocation || isReporting}
-                  >
-                    {isReporting ? "Reporting..." : "Laporkan Demonstrasi"}
-                  </Button>
-                  {!userLocation && (
-                    <p className="text-sm font-normal text-content-secondary">
-                      Silakan izinkan akses lokasi untuk melaporkan aktivitas
-                      demonstrasi.
-                    </p>
-                  )}
-                </div>
-                <p className="text-xs text-content-secondary font-normal">
-                  *) Lokasi Anda akan digunakan untuk menempatkan laporan secara
-                  akurat di peta. Semua laporan bersifat anonim dan membantu
-                  menciptakan komunitas yang lebih aman dan terinformasi.
-                </p>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
+          <div className="flex flex-col gap-y-2">
+            <AppDialog
+              handleReportDemonstration={handleReportDemonstration}
+              userLocation={userLocation}
+              isReporting={isReporting}
+            />
+            <AppDialogPin
+              handleReportDemonstration={handleReportPinPoint}
+              pinLocation={pinLocation}
+              isReporting={isReporting}
+            />
+          </div>
         </Card>
       </main>
+      {}
     </div>
   );
 }
