@@ -16,6 +16,14 @@ export const focusRing = [
   "outline-blue-500 dark:outline-blue-500",
 ];
 
+export const searchGeocoding = async (keyword: string) => {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${keyword}&format=jsonv2`
+  );
+  const data = await response.json();
+  return data;
+};
+
 export const reverseGeocoding = async (latitude: number, longitude: number) => {
   const response = await fetch(
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`

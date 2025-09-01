@@ -4,7 +4,9 @@ import { Button } from "./components/ui/button";
 import Heatmap from "./components/heatmap";
 import { RiAlertFill } from "@remixicon/react";
 import { writeActivityData } from "./lib/realtime-db";
-import { reverseGeocoding } from "./lib/utils";
+import { reverseGeocoding, searchGeocoding } from "./lib/utils";
+import { onValue, ref } from "firebase/database";
+import { db } from "./lib/firebase";
 
 function App() {
   const [userLocation, setUserLocation] = useState<{
@@ -12,6 +14,39 @@ function App() {
     lng: number;
   } | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+
+  const [heatmapData, setHeatmapData] = useState<
+    { suburb: string; lat: number; lng: number; level: number }[]
+  >([]);
+
+  const fetchAcitivity = async (): Promise<void> => {
+    const starCountRef = ref(db, "activity/");
+    onValue(starCountRef, async (snapshot) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any = snapshot.val();
+
+      // List subUrban data from the firebase keys
+      const subUrbanList: string[] = Object.keys(data);
+
+      subUrbanList.map(async (item: string) => {
+        const coordinate = await searchGeocoding(item);
+
+        setHeatmapData((prev) => [
+          ...prev,
+          {
+            suburb: item,
+            lat: coordinate[0].lat as number,
+            lng: coordinate[0].lon as number,
+            level: Object.keys(data[item]).length as number,
+          },
+        ]);
+      });
+    });
+  };
+
+  useEffect(() => {
+    console.log("heatmapData: ", heatmapData);
+  }, [heatmapData]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -27,6 +62,8 @@ function App() {
         }
       );
     }
+
+    fetchAcitivity();
   }, []);
 
   const handleReportDemonstration = async () => {
@@ -44,8 +81,13 @@ function App() {
 
     try {
       const data = await reverseGeocoding(userLocation?.lat, userLocation?.lng);
-      const city = data.address.city;
+      console.log("data: ", data);
 
+      if (!data.address.suburb) {
+        throw new Error("Gagal mendapatkan data Kecamatan");
+      }
+
+      const city = data.address.suburb;
       const sanitizedCity = city.replace(/\s+/g, "-").toLowerCase();
 
       await writeActivityData(
@@ -90,7 +132,7 @@ function App() {
             <p></p>
           </div>
           <div className="w-full h-96 rounded-lg overflow-hidden border border-stroke-primary">
-            <Heatmap />
+            <Heatmap activityMap={heatmapData} />
           </div>
         </Card>
         <Card className="bg-background-secondary border-stroke-primary flex flex-col space-y-4">
