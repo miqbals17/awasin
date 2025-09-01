@@ -15,7 +15,9 @@ interface HeatmapProps {
 const LATITUDE_DPR = -6.2085967;
 const LONGITUDE_DPR = 106.8025844;
 
-const fillRedOptions: PathOptions = { fillColor: "red", color: "" };
+const fillRed1Options: PathOptions = { fillColor: "#BE5B50", stroke: false };
+const fillRed2Options: PathOptions = { fillColor: "#8A2D3B", stroke: false };
+const fillRed3Options: PathOptions = { fillColor: "#641B2E", stroke: false };
 
 export default function Heatmap({ activityMap }: HeatmapProps) {
   const mapRef = useRef(null);
@@ -31,18 +33,30 @@ export default function Heatmap({ activityMap }: HeatmapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {activityMap.map((activity) => (
-        <Circle
-          center={[activity.lat, activity.lng]}
-          pathOptions={fillRedOptions}
-          radius={activity.level * 500}
-          key={activity.suburb}
-        >
-          <Popup>
-            Level demonstrasi: <b>{activity.level}</b>
-          </Popup>
-        </Circle>
-      ))}
+      {activityMap.map((activity) => {
+        let options: PathOptions;
+
+        if (activity.level < 50) {
+          options = fillRed1Options;
+        } else if (activity.level < 500) {
+          options = fillRed2Options;
+        } else {
+          options = fillRed3Options;
+        }
+
+        return (
+          <Circle
+            center={[activity.lat, activity.lng]}
+            pathOptions={options}
+            radius={activity.level * 500}
+            key={activity.suburb}
+          >
+            <Popup>
+              Level demonstrasi: <b>{activity.level}</b>
+            </Popup>
+          </Circle>
+        );
+      })}
     </MapContainer>
   );
 }
