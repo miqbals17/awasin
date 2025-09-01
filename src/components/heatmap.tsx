@@ -3,6 +3,18 @@ import { Circle, MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import type { PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LATITUDE_DPR, LONGITUDE_DPR, type UserLocation } from "../App";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+delete (L.Icon.Default.prototype as any)._getIconUrl; // Important for some bundlers
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 interface HeatmapProps {
   activityMap: {
